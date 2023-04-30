@@ -9,29 +9,40 @@ export const createCard = (
   next: NextFunction,
 ) => {
   const { name, link } = req.body;
-  return Card.create({ name, link, owner: req.user._id })
+  return Card.create(
+    { name, link, owner: req.user._id },
+    { runValidators: true },
+  )
     .then((card) => {
-      if (!card) throw new Error();
       res.send({ data: card });
     })
-    .catch(() => next(new ValidationErr('Переданы некорректные данные')));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new ValidationErr('Переданы некорректные данные'));
+      }
+      return next(err);
+    });
 };
 
 export const getCards = (req: Request, res: Response, next: NextFunction) => Card.find({})
   .then((cards) => {
-    if (!cards) throw new Error();
     res.send({ data: cards });
   })
-  .catch(() => next(new NotFoundErr('Карточки не найдены')));
+  .catch(next);
 
 export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
   const { cardId } = req.params;
   return Card.findByIdAndRemove(cardId)
     .then((card) => {
-      if (!card) throw new Error();
+      if (!card) next(new NotFoundErr('Нет карточки с таким id'));
       res.send({ data: card });
     })
-    .catch(() => next(new NotFoundErr('Нет карточки с таким id')));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new ValidationErr('Переданы некорректные данные'));
+      }
+      return next(err);
+    });
 };
 
 export const likeCard = (
@@ -46,10 +57,15 @@ export const likeCard = (
     { new: true },
   )
     .then((card) => {
-      if (!card) throw new Error();
+      if (!card) next(new NotFoundErr('Нет карточки с таким id'));
       res.send({ data: card });
     })
-    .catch(() => next(new NotFoundErr('Нет карточки с таким id')));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new ValidationErr('Переданы некорректные данные'));
+      }
+      return next(err);
+    });
 };
 
 export const dislikeCard = (
@@ -64,8 +80,13 @@ export const dislikeCard = (
     { new: true },
   )
     .then((card) => {
-      if (!card) throw new Error();
+      if (!card) next(new NotFoundErr('Нет карточки с таким id'));
       res.send({ data: card });
     })
-    .catch(() => next(new NotFoundErr('Нет карточки с таким id')));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new ValidationErr('Переданы некорректные данные'));
+      }
+      return next(err);
+    });
 };

@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from 'express';
 import mongoose from 'mongoose';
 import userRouter from './routes/user';
 import cardRouter from './routes/card';
+import NotFoundErr from './errors/not-found-err';
 
 const app = express();
 
@@ -19,8 +20,10 @@ app.use((req: Partial<Request> & { user?: any }, res: Response, next) => {
 
 app.use(userRouter);
 app.use(cardRouter);
+app.use(() => {
+  throw new NotFoundErr('Cтраница не найдена');
+});
 
-// eslint-disable-next-line no-unused-vars
 app.use((err: Error & { statusCode?: number }, req: Request, res: Response, next: NextFunction) => {
   const { statusCode = 500, message } = err;
   res
@@ -28,6 +31,8 @@ app.use((err: Error & { statusCode?: number }, req: Request, res: Response, next
     .send({
       message: statusCode === 500 ? 'На сервере произошла ошибка' : message,
     });
+
+  next();
 });
 
 app.listen(3000, () => {

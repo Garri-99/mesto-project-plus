@@ -5,12 +5,9 @@ import NotFoundErr from '../errors/not-found-err';
 
 export const getUsers = (req: Request, res: Response, next: NextFunction) => User.find({})
   .then((users) => {
-    if (!users) throw new Error();
     res.send({ data: users });
   })
-  .catch(() => {
-    next(new NotFoundErr('Пользователи не найдены'));
-  });
+  .catch(next);
 
 export const getUserById = (
   req: Request,
@@ -20,22 +17,29 @@ export const getUserById = (
   const { userId } = req.params;
   return User.findById(userId)
     .then((user) => {
-      if (!user) throw new Error();
+      if (!user) next(new NotFoundErr('Нет пользователя с таким id'));
       res.send({ data: user });
     })
-    .catch(() => {
-      next(new NotFoundErr('Нет пользователя с таким id'));
+    .catch((err) => {
+      if (err.name === 'CastError') {
+        next(new ValidationErr('Переданы некорректные данные'));
+      }
+      return next(err);
     });
 };
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
   const { name, about, avatar } = req.body;
-  return User.create({ name, about, avatar })
+  return User.create({ name, about, avatar }, { runValidators: true })
     .then((user) => {
-      if (!user) throw new Error();
       res.send({ data: user });
     })
-    .catch(() => next(new ValidationErr('Переданы некорректные данные')));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new ValidationErr('Переданы некорректные данные'));
+      }
+      return next(err);
+    });
 };
 
 export const updateProfile = (
@@ -44,12 +48,17 @@ export const updateProfile = (
   next: NextFunction,
 ) => {
   const { name, about } = req.body;
-  return User.findByIdAndUpdate(req.user._id, { name, about })
+  return User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
     .then((user) => {
-      if (!user) throw new Error();
+      if (!user) next(new NotFoundErr('Нет пользователя с таким id'));
       res.send({ data: user });
     })
-    .catch(() => next(new ValidationErr('Переданы некорректные данные')));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new ValidationErr('Переданы некорректные данные'));
+      }
+      return next(err);
+    });
 };
 
 export const updateAvatar = (
@@ -58,10 +67,15 @@ export const updateAvatar = (
   next: NextFunction,
 ) => {
   const { avatar } = req.body;
-  return User.findByIdAndUpdate(req.user._id, { avatar })
+  return User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
     .then((user) => {
-      if (!user) throw new Error();
+      if (!user) next(new NotFoundErr('Нет пользователя с таким id'));
       res.send({ data: user });
     })
-    .catch(() => next(new ValidationErr('Переданы некорректные данные')));
+    .catch((err) => {
+      if (err.name === 'ValidationError') {
+        next(new ValidationErr('Переданы некорректные данные'));
+      }
+      return next(err);
+    });
 };
