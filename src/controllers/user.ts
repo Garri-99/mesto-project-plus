@@ -18,7 +18,7 @@ export const getUserById = (
   return User.findById(userId)
     .then((user) => {
       if (!user) next(new NotFoundErr('Нет пользователя с таким id'));
-      res.send({ data: user });
+      else res.send({ data: user });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
@@ -30,7 +30,7 @@ export const getUserById = (
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
   const { name, about, avatar } = req.body;
-  return User.create({ name, about, avatar }, { runValidators: true })
+  return User.create({ name, about, avatar })
     .then((user) => {
       res.send({ data: user });
     })
@@ -48,10 +48,14 @@ export const updateProfile = (
   next: NextFunction,
 ) => {
   const { name, about } = req.body;
-  return User.findByIdAndUpdate(req.user._id, { name, about }, { new: true, runValidators: true })
+  return User.findByIdAndUpdate(
+    req.user._id,
+    { name, about },
+    { new: true, runValidators: true },
+  )
     .then((user) => {
       if (!user) next(new NotFoundErr('Нет пользователя с таким id'));
-      res.send({ data: user });
+      else res.send({ data: user });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
@@ -67,10 +71,14 @@ export const updateAvatar = (
   next: NextFunction,
 ) => {
   const { avatar } = req.body;
-  return User.findByIdAndUpdate(req.user._id, { avatar }, { new: true, runValidators: true })
+  return User.findByIdAndUpdate(
+    req.user._id,
+    { avatar },
+    { new: true, runValidators: true },
+  )
     .then((user) => {
       if (!user) next(new NotFoundErr('Нет пользователя с таким id'));
-      res.send({ data: user });
+      else res.send({ data: user });
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {

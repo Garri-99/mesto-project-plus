@@ -9,10 +9,7 @@ export const createCard = (
   next: NextFunction,
 ) => {
   const { name, link } = req.body;
-  return Card.create(
-    { name, link, owner: req.user._id },
-    { runValidators: true },
-  )
+  return Card.create({ name, link, owner: req.user._id })
     .then((card) => {
       res.send({ data: card });
     })
@@ -35,7 +32,7 @@ export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
   return Card.findByIdAndRemove(cardId)
     .then((card) => {
       if (!card) next(new NotFoundErr('Нет карточки с таким id'));
-      res.send({ data: card });
+      else res.send({ data: card });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
@@ -58,7 +55,7 @@ export const likeCard = (
   )
     .then((card) => {
       if (!card) next(new NotFoundErr('Нет карточки с таким id'));
-      res.send({ data: card });
+      else res.send({ data: card });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
@@ -81,7 +78,7 @@ export const dislikeCard = (
   )
     .then((card) => {
       if (!card) next(new NotFoundErr('Нет карточки с таким id'));
-      res.send({ data: card });
+      else res.send({ data: card });
     })
     .catch((err) => {
       if (err.name === 'CastError') {
