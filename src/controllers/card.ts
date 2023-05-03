@@ -2,6 +2,7 @@ import { NextFunction, Request, Response } from 'express';
 import Card from '../models/card';
 import ValidationErr from '../errors/validation-err';
 import NotFoundErr from '../errors/not-found-err';
+import ForbiddenErr from '../errors/forbidden-err';
 
 export const createCard = (
   req: Request & { user?: any },
@@ -27,12 +28,24 @@ export const getCards = (req: Request, res: Response, next: NextFunction) => Car
   })
   .catch(next);
 
-export const deleteCard = (req: Request, res: Response, next: NextFunction) => {
+export const deleteCard = (
+  req: Request & { user?: any },
+  res: Response,
+  next: NextFunction,
+) => {
   const { cardId } = req.params;
-  return Card.findByIdAndRemove(cardId)
+  return Card.findById(cardId)
     .then((card) => {
-      if (!card) next(new NotFoundErr('Нет карточки с таким id'));
-      else res.send({ data: card });
+      if (!card) {
+        next(new NotFoundErr('Нет карточки с таким id'));
+      } else if (card.owner.toString() !== req.user._id) {
+        next(
+          new ForbiddenErr('Вы не можете удалять карточки других пользователей'),
+        );
+      } else {
+        card.deleteOne();
+        res.send({ data: card });
+      }
     })
     .catch((err) => {
       if (err.name === 'CastError') {

@@ -1,9 +1,28 @@
 import { Request, Response, NextFunction } from 'express';
+import bcrypt from 'bcrypt';
+import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
 import ValidationErr from '../errors/validation-err';
 import User from '../models/user';
 import NotFoundErr from '../errors/not-found-err';
+import AuthErr from '../errors/auth-err';
+import ConflictErr from '../errors/conflict-err';
+
+dotenv.config();
+
+const { JWT_SECRET = 'secret' } = process.env;
 
 export const getUsers = (req: Request, res: Response, next: NextFunction) => User.find({})
+  .then((users) => {
+    res.send({ data: users });
+  })
+  .catch(next);
+
+export const getUserInfo = (
+  req: Request & { user?: any },
+  res: Response,
+  next: NextFunction,
+) => User.findById(req.user._id)
   .then((users) => {
     res.send({ data: users });
   })
@@ -29,12 +48,25 @@ export const getUserById = (
 };
 
 export const createUser = (req: Request, res: Response, next: NextFunction) => {
-  const { name, about, avatar } = req.body;
-  return User.create({ name, about, avatar })
+  const {
+    name, about, avatar, password, email,
+  } = req.body;
+  return bcrypt
+    .hash(password, 10)
+    .then((hash) => User.create({
+      name,
+      about,
+      avatar,
+      email,
+      password: hash,
+    }))
     .then((user) => {
       res.send({ data: user });
     })
     .catch((err) => {
+      if (err.code === 11000) {
+        next(new ConflictErr('Пользователь с таким email уже есть'));
+      }
       if (err.name === 'ValidationError') {
         next(new ValidationErr('Переданы некорректные данные'));
       }
@@ -86,4 +118,24 @@ export const updateAvatar = (
       }
       return next(err);
     });
+};
+
+export const login = (req: Request, res: Response, next: NextFunction) => {
+  const { email, password } = req.body;
+
+  return User.findUserByCredentials(email, password)
+    .then((user) => {
+      if (!user) throw new AuthErr('Ошибка атворизации');
+      const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
+        expiresIn: '7d',
+      });
+      res
+        .cookie('jwt', token, {
+          maxAge: 3600000 * 24 * 7,
+          httpOnly: true,
+          sameSite: true,
+        })
+        .end();
+    })
+    .catch(next);
 };
