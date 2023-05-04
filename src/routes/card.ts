@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { celebrate, Joi } from 'celebrate';
+import { isObjectIdOrHexString } from 'mongoose';
 import {
   createCard,
   getCards,
@@ -13,7 +14,12 @@ const router = Router();
 router.get('/cards', getCards);
 router.delete('/cards/:cardId', celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().required(),
+    cardId: Joi.string().required().custom((v) => {
+      if (!isObjectIdOrHexString(v)) {
+        throw new Error('Некорректный id');
+      }
+      return v;
+    }),
   }),
 }), deleteCard);
 router.post('/cards', celebrate({
@@ -24,12 +30,22 @@ router.post('/cards', celebrate({
 }), createCard);
 router.put('/cards/:cardId/likes', celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().required(),
+    cardId: Joi.string().required().custom((v) => {
+      if (!isObjectIdOrHexString(v)) {
+        throw new Error('Некорректный id');
+      }
+      return v;
+    }),
   }),
 }), likeCard);
 router.delete('/cards/:cardId/likes', celebrate({
   params: Joi.object().keys({
-    cardId: Joi.string().required(),
+    cardId: Joi.string().required().custom((v) => {
+      if (!isObjectIdOrHexString(v)) {
+        throw new Error('Некорректный id');
+      }
+      return v;
+    }),
   }),
 }), dislikeCard);
 

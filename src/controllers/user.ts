@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express';
+import { ObjectId } from 'mongoose';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
 import ValidationErr from '../errors/validation-err';
 import User from '../models/user';
 import NotFoundErr from '../errors/not-found-err';
-import AuthErr from '../errors/auth-err';
 import ConflictErr from '../errors/conflict-err';
 
 dotenv.config();
@@ -19,12 +19,12 @@ export const getUsers = (req: Request, res: Response, next: NextFunction) => Use
   .catch(next);
 
 export const getUserInfo = (
-  req: Request & { user?: any },
+  req: Request & { user?: { _id: ObjectId } },
   res: Response,
   next: NextFunction,
-) => User.findById(req.user._id)
-  .then((users) => {
-    res.send({ data: users });
+) => User.findById(req.user?._id)
+  .then((user) => {
+    res.send({ data: user });
   })
   .catch(next);
 
@@ -41,7 +41,7 @@ export const getUserById = (
     })
     .catch((err) => {
       if (err.name === 'CastError') {
-        next(new ValidationErr('Переданы некорректные данные'));
+        return next(new ValidationErr('Переданы некорректные данные'));
       }
       return next(err);
     });
@@ -61,27 +61,34 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
       password: hash,
     }))
     .then((user) => {
-      res.send({ data: user });
+      res.send({
+        data: {
+          name: user.name,
+          about: user.about,
+          email: user.email,
+          avatar: user.avatar,
+        },
+      });
     })
     .catch((err) => {
       if (err.code === 11000) {
-        next(new ConflictErr('Пользователь с таким email уже есть'));
+        return next(new ConflictErr('Пользователь с таким email уже есть'));
       }
       if (err.name === 'ValidationError') {
-        next(new ValidationErr('Переданы некорректные данные'));
+        return next(new ValidationErr('Переданы некорректные данные'));
       }
       return next(err);
     });
 };
 
 export const updateProfile = (
-  req: Request & { user?: any },
+  req: Request & { user?: { _id: ObjectId } },
   res: Response,
   next: NextFunction,
 ) => {
   const { name, about } = req.body;
   return User.findByIdAndUpdate(
-    req.user._id,
+    req.user?._id,
     { name, about },
     { new: true, runValidators: true },
   )
@@ -91,20 +98,20 @@ export const updateProfile = (
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new ValidationErr('Переданы некорректные данные'));
+        return next(new ValidationErr('Переданы некорректные данные'));
       }
       return next(err);
     });
 };
 
 export const updateAvatar = (
-  req: Request & { user?: any },
+  req: Request & { user?: { _id: ObjectId } },
   res: Response,
   next: NextFunction,
 ) => {
   const { avatar } = req.body;
   return User.findByIdAndUpdate(
-    req.user._id,
+    req.user?._id,
     { avatar },
     { new: true, runValidators: true },
   )
@@ -114,7 +121,7 @@ export const updateAvatar = (
     })
     .catch((err) => {
       if (err.name === 'ValidationError') {
-        next(new ValidationErr('Переданы некорректные данные'));
+        return next(new ValidationErr('Переданы некорректные данные'));
       }
       return next(err);
     });
@@ -125,7 +132,6 @@ export const login = (req: Request, res: Response, next: NextFunction) => {
 
   return User.findUserByCredentials(email, password)
     .then((user) => {
-      if (!user) throw new AuthErr('Ошибка атворизации');
       const token = jwt.sign({ _id: user._id }, JWT_SECRET, {
         expiresIn: '7d',
       });

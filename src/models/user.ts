@@ -32,7 +32,7 @@ const userSchema = new Schema<IUser, IUserModel>({
   about: {
     type: String,
     minlength: 2,
-    maxlength: 200,
+    maxlength: 30,
     default: 'Исследователь',
   },
   avatar: {
@@ -56,7 +56,6 @@ const userSchema = new Schema<IUser, IUserModel>({
   password: {
     type: String,
     required: true,
-    minlength: 6,
     select: false,
   },
 });
