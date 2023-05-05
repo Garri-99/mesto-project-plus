@@ -1,12 +1,11 @@
 import { NextFunction, Request, Response } from 'express';
-import { ObjectId } from 'mongoose';
 import Card from '../models/card';
 import ValidationErr from '../errors/validation-err';
 import NotFoundErr from '../errors/not-found-err';
 import ForbiddenErr from '../errors/forbidden-err';
 
 export const createCard = (
-  req: Request & { user?: { _id: ObjectId } },
+  req: Request & { user?: { _id: string } },
   res: Response,
   next: NextFunction,
 ) => {
@@ -56,7 +55,7 @@ export const deleteCard = (
 };
 
 export const likeCard = (
-  req: Request & { user?: { _id: ObjectId } },
+  req: Request & { user?: { _id: string } },
   res: Response,
   next: NextFunction,
 ) => {
@@ -79,7 +78,7 @@ export const likeCard = (
 };
 
 export const dislikeCard = (
-  req: Request & { user?: { _id: ObjectId } },
+  req: Request & { user?: { _id: string | any} },
   res: Response,
   next: NextFunction,
 ) => {

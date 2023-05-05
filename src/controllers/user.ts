@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express';
-import { ObjectId } from 'mongoose';
 import bcrypt from 'bcrypt';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
@@ -19,7 +18,7 @@ export const getUsers = (req: Request, res: Response, next: NextFunction) => Use
   .catch(next);
 
 export const getUserInfo = (
-  req: Request & { user?: { _id: ObjectId } },
+  req: Request & { user?: { _id: string } },
   res: Response,
   next: NextFunction,
 ) => User.findById(req.user?._id)
@@ -82,7 +81,7 @@ export const createUser = (req: Request, res: Response, next: NextFunction) => {
 };
 
 export const updateProfile = (
-  req: Request & { user?: { _id: ObjectId } },
+  req: Request & { user?: { _id: string } },
   res: Response,
   next: NextFunction,
 ) => {
@@ -105,7 +104,7 @@ export const updateProfile = (
 };
 
 export const updateAvatar = (
-  req: Request & { user?: { _id: ObjectId } },
+  req: Request & { user?: { _id: string } },
   res: Response,
   next: NextFunction,
 ) => {
